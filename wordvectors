@@ -1,0 +1,50 @@
+!pip install gensim spacy
+!python -m spacy download en_core_web_sm
+
+import gensim.downloader as api
+from gensim.models import Word2Vec, FastText
+import spacy
+
+# Örnek cümleler
+sentences = [
+    ["king", "queen", "man", "woman"],
+    ["paris", "france", "berlin", "germany"],
+    ["apple", "fruit", "banana", "orange"]
+]
+
+print("📥 [1] GloVe modelini indiriyoruz...")
+glove_model = api.load("glove-wiki-gigaword-100")  # 100 boyutlu GloVe
+
+print("📥 [2] Word2Vec modelini indiriyoruz...")
+word2vec_model = api.load("word2vec-google-news-300")  # 300 boyutlu Word2Vec
+
+print("🔨 [3] FastText modelini eğitim verisiyle sıfırdan eğitiyoruz...")
+fasttext_model = FastText(sentences, vector_size=100, window=3, min_count=1, epochs=10)
+
+# === SORGULAR === #
+def show_similarities(word, model, model_name):
+    try:
+        print(f"\n🔍 {model_name} ile benzer kelimeler: '{word}'")
+        for similar_word, score in model.most_similar(word):
+            print(f"  {similar_word}: {score:.4f}")
+    except KeyError:
+        print(f"⚠️  '{word}' kelimesi {model_name} modelinde bulunamadı.")
+
+# Benzer kelimeleri yazdır
+show_similarities("king", glove_model, "GloVe")
+show_similarities("king", word2vec_model, "Word2Vec")
+show_similarities("king", fasttext_model.wv, "FastText")
+
+# === VEKTÖR ARİTMETİĞİ === #
+def analogy(word_a, word_b, word_c, model, model_name):
+    try:
+        print(f"\n📐 {model_name} Analogy: {word_a} - {word_b} + {word_c} = ?")
+        result = model.most_similar(positive=[word_c, word_a], negative=[word_b])
+        for word, score in result[:3]:
+            print(f"  {word}: {score:.4f}")
+    except KeyError as e:
+        print(f"⚠️  {str(e)}")
+
+analogy("king", "man", "woman", glove_model, "GloVe")
+analogy("king", "man", "woman", word2vec_model, "Word2Vec")
+analogy("king", "man", "woman", fasttext_model.wv, "FastText")
